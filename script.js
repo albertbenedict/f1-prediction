@@ -523,7 +523,7 @@ function initPredictionForm(drivers, nextRace) {
   const wildcardPos = makeWildcardPosition(season, round);
 
   document.getElementById("form-title").textContent = nextRace ? `Your Predictions for the ${nextRace.raceName}` : "Your Predictions for the Next Grand Prix";
-  document.getElementById("wildcard-label").innerHTML = `Wildcard — Who finishes P${wildcardPos} in the Race? <span class="wildcard-badge" style="margin-left:8px;">Bonus ${SCORING.wildcard}pts</span>`;
+  document.getElementById("wildcard-label").innerHTML = `P-What - Who finishes P${wildcardPos} in the Race? <span class="wildcard-badge" style="margin-left:8px;">Bonus ${SCORING.wildcard}pts</span>`;
   document.querySelector('#wildcard-driver option').textContent = `Select driver for P${wildcardPos}`;
 
   if (!drivers?.length) {
