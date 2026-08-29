@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F1 Weekend Predictor</title>
+  <script>(function () { try { var s = localStorage.getItem('theme'); var d = window.matchMedia('(prefers-color-scheme: dark)').matches; document.documentElement.setAttribute('data-theme', s || (d ? 'dark' : 'light')); } catch (e) { } })();</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="navbar">
+    <a class="nav-title-link" href="#" id="nav-home"><span class="nav-title">F1 Prediction</span></a>
+    <div class="nav-right">
+      <div class="nav-links">
+        <button class="nav-pill active" data-tab="play">Play</button>
+        <button class="nav-pill" data-tab="predictions">Your Predictions</button>
+        <button class="nav-pill" data-tab="standings">Standings</button>
+        <button class="nav-pill" data-tab="results">Past Results</button>
+      </div>
+      <label class="theme-toggle" for="theme-switch" title="Toggle dark mode">
+        <input type="checkbox" id="theme-switch">
+        <span class="toggle-track"><span class="toggle-thumb"></span></span>
+      </label>
+    </div>
+  </div>
+
+  <div class="app">
+    <p class="tagline">Guess the race weekend results. Lock before lights out.</p>
+    <div id="global-error" class="error-text"
+      style="margin-bottom:16px; border:2px solid var(--danger); background:rgba(226,87,76,0.08); padding:12px 16px; border-radius:12px;">
+    </div>
+    <!-- PLAY SCREEN -->
+    <div id="screen-play" class="screen active">
+      <!-- Countdown -->
+      <div id="countdown-card" class="card">
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; align-items:center;">
+          <div>
+            <div id="countdown-title" style="font-family:var(--font-display); font-weight:700; font-size:18;">Loading
+              next weekend…</div>
+            <div id="countdown-subtitle" style="color:var(--text-dim); font-size:13; margin-top:4px;"></div>
+            <div id="countdown-date" style="color:var(--text-dim); font-size:12; margin-top:4px;"></div>
+          </div>
+          <div id="countdown-pill" class="pill" style="font-size:12;">Next: <b id="countdown-pill-label">—</b></div>
+        </div>
+        <div id="countdown-grid" class="countdown-grid" style="margin-top:16px;">
+          <div class="countdown-box">
+            <div class="countdown-num">—</div>
+            <div class="countdown-label">Days</div>
+          </div>
+          <div class="countdown-box">
+            <div class="countdown-num">—</div>
+            <div class="countdown-label">Hours</div>
+          </div>
+          <div class="countdown-box">
+            <div class="countdown-num">—</div>
+            <div class="countdown-label">Mins</div>
+          </div>
+          <div class="countdown-box">
+            <div class="countdown-num">—</div>
+            <div class="countdown-label">Secs</div>
+          </div>
+        </div>
+        <div id="countdown-live"
+          style="display:none; margin-top:10px; text-align:center; font-size:12; font-weight:700; color:var(--success);">
+          ● LIVE — session in progress</div>
+      </div>
+
+      <!-- Prediction Form -->
+      <div id="prediction-card" class="card">
+        <div
+          style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:16px;">
+          <h2 id="form-title" style="font-family:var(--font-display); font-weight:700; font-size:18; margin:0;">Your
+            Predictions Loading…</h2>
+        </div>
+        <div id="form-loading" style="color:var(--text-dim); font-size:14;">Loading drivers…</div>
+        <form id="prediction-form" style="display:none;">
+          <div class="field">
+            <label for="pole">Pole Position (Qualifying P1)</label>
+            <select id="pole">
+              <option value="">Select driver</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="winner">Race Winner (P1)</label>
+            <select id="winner">
+              <option value="">Select driver</option>
+            </select>
+          </div>
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="field"><label for="p2">Podium P2</label><select id="p2">
+                <option value="">Select driver</option>
+              </select></div>
+            <div class="field"><label for="p3">Podium P3</label><select id="p3">
+                <option value="">Select driver</option>
+              </select></div>
+          </div>
+          <div id="error-duplicate" class="error-text">⚠️ Duplicate drivers in Winner/P2/P3 — each podium slot must be a
+            different driver (Pole can match).</div>
+
+          <div id="sprint-section"
+            style="display:none; margin-top:8px; padding-top:16px; border-top:2px dashed var(--border-subtle);">
+            <div style="font-family:var(--font-display); font-weight:700; font-size:14; margin-bottom:12px;">Sprint
+              Weekend — extra picks <span class="wildcard-badge" style="font-size:10; margin-left:6px;">Sprint</span>
+            </div>
+            <div class="field"><label for="sprint-pole">Sprint Pole (Sprint Qualifying P1) — 3 pts</label><select
+                id="sprint-pole">
+                <option value="">Select driver</option>
+              </select></div>
+            <div class="field"><label for="sprint-winner">Sprint Winner (Sprint P1) — 5 pts</label><select
+                id="sprint-winner">
+                <option value="">Select driver</option>
+              </select></div>
+          </div>
+
+          <div
+            style="margin-top:16px; padding:16px; background:var(--surface-2); border:2px solid var(--border-color); border-radius:12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+              <label id="wildcard-label" style="margin:0;">Wildcard — Who finishes P? in the Race? <span
+                  class="wildcard-badge" style="margin-left:8px;">Bonus 8pts</span></label>
+            </div>
+            <div style="color:var(--text-dim); font-size:12; margin-top:4px; margin-bottom:10px;">Guess the exact driver
+              for bonus points.</div>
+            <select id="wildcard-driver">
+              <option value="">Select driver for P?</option>
+            </select>
+          </div>
+
+          <div style="display:flex; gap:10px; margin-top:18px;">
+            <button type="submit" id="save-btn" class="primary-btn" style="flex:1;">Save Predictions</button>
+            <button type="button" id="clear-btn" class="secondary-btn">Clear</button>
+          </div>
+          <div id="form-saved" class="status-text" style="text-align:center; color:var(--success); font-weight:700;">✓
+            Saved!</div>
+        </form>
+      </div>
+
+      <div class="card" style="padding:16px;">
+        <div style="font-weight:700; font-family:var(--font-display); font-size:14; margin-bottom:8px;">Scoring System:
+        </div>
+        <ul style="margin:0; padding-left:18px; color:var(--text-dim); font-size:13; line-height:1.7;">
+          <li>Pole Position: 5 pts</li>
+          <li>Race Winner: 10 pts</li>
+          <li>Podium P2/P3 exact slot: 5 pts each — any podium (wrong slot): 2 pts</li>
+          <li>If Sprint weekend: Sprint Pole 3 pts, Sprint Win 5 pts</li>
+          <li>P-What: 8 pts exact only</li>
+        </ul>
+        <div style="color:var(--text-dim); font-size:12; margin-top:10px;">Predictions saved to locally and past
+          results tab will auto-score post race.</div>
+      </div>
+    </div>
+
+    <!-- PREDICTIONS SCREEN -->
+    <div id="screen-predictions" class="screen">
+      <div class="card" style="padding:16px;">
+        <h2 style="font-family:var(--font-display); font-weight:700; font-size:16; margin:0;">Your Predictions</h2>
+        <p style="color:var(--text-dim); font-size:13; margin:6px 0 0;">All saved picks sorted from most recent. Scores
+          auto-calculate post race result.</p>
+      </div>
+      <div id="predictions-current" class="card" style="display:none;"></div>
+      <div id="predictions-empty" class="card"
+        style="display:none; text-align:center; color:var(--text-dim); font-size:14;">No predictions yet. Go to
+        <b>Play</b> and save your picks for the next Grand Prix.</div>
+      <div id="predictions-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+    </div>
+
+    <!-- STANDINGS SCREEN -->
+    <div id="screen-standings" class="screen">
+      <div class="card" style="padding:16px;">
+        <h2 id="standings-title" style="font-family:var(--font-display); font-weight:700; font-size:16; margin:0;">
+          Championship Standings</h2>
+        <p style="color:var(--text-dim); font-size:13; margin:6px 0 0;">Reference for your picks. Data from Jolpica +
+          OpenF1.</p>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div style="display:flex; border-bottom:2px solid var(--border-subtle);">
+          <button class="nav-pill"
+            style="flex:1; border:none; border-radius:0; box-shadow:none; background:var(--surface-2);"
+            data-standings-tab="drivers">Drivers</button>
+          <button class="nav-pill"
+            style="flex:1; border:none; border-radius:0; box-shadow:none; background:transparent; color:var(--text-dim);"
+            data-standings-tab="constructors">Constructors</button>
+        </div>
+        <div id="standings-loading" style="padding:20px; display:flex; flex-direction:column; gap:12px;">
+          <div class="skeleton" style="height:32px;"></div>
+          <div class="skeleton" style="height:32px;"></div>
+          <div class="skeleton" style="height:32px;"></div>
+          <div class="skeleton" style="height:32px;"></div>
+        </div>
+        <div id="standings-content" style="display:none; overflow-x:auto;">
+          <table class="standings-table">
+            <thead id="standings-head">
+              <tr></tr>
+            </thead>
+            <tbody id="standings-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESULTS SCREEN -->
+    <div id="screen-results" class="screen">
+      <div id="score-preview" class="card" style="display:none; background:var(--surface-2); border-style:dashed;">
+        <div id="score-preview-title" style="font-family:var(--font-display); font-weight:700;"></div>
+        <div id="score-preview-num"
+          style="font-size:28; font-weight:800; margin-top:6px; font-family:var(--font-display);"></div>
+        <div id="score-preview-details" style="color:var(--text-dim); font-size:12; margin-top:4px;"></div>
+        <div id="score-preview-picks" style="color:var(--text-dim); font-size:12; margin-top:8px;"></div>
+      </div>
+      <div class="card" id="results-card">
+        <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; align-items:center;">
+          <h3 id="results-title" style="font-family:var(--font-display); font-weight:700; margin:0; font-size:16;">Past
+            Results — Loading…</h3>
+          <label
+            style="display:flex; align-items:center; gap:8px; font-size:12; text-transform:none; letter-spacing:0;">Jump
+            to round: <input type="number" id="results-round-input" min="1" max="24"
+              style="width:80px; background:var(--surface); color:var(--text-color); border:2px solid var(--border-color); border-radius:50px; padding:8px 10px; font-size:13;">
+            <button id="results-load-btn" class="secondary-btn"
+              style="padding:6px 12px; font-size:12;">Go</button></label>
+        </div>
+        <div id="results-loading" style="margin-top:16px; display:flex; flex-direction:column; gap:12px;">
+          <div class="skeleton" style="height:18px; width:60%;"></div>
+          <div class="skeleton" style="height:200px;"></div>
+        </div>
+        <div id="results-content" style="display:none; margin-top:16px;">
+          <div>
+            <h4 style="font-weight:700; font-size:14; margin-bottom:8px;">Race — Top 10</h4>
+            <div style="overflow-x:auto;">
+              <table class="standings-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Driver</th>
+                    <th>Team</th>
+                    <th>Pts</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="results-race-body"></tbody>
+              </table>
+            </div>
+          </div>
+          <div style="margin-top:18px;">
+            <h4 style="font-weight:700; font-size:14; margin-bottom:8px;">Qualifying — Top 5</h4>
+            <div style="overflow-x:auto;">
+              <table class="standings-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Driver</th>
+                    <th>Team</th>
+                    <th>Q3</th>
+                  </tr>
+                </thead>
+                <tbody id="results-quali-body"></tbody>
+              </table>
+            </div>
+            <div id="results-quali-empty" style="color:var(--text-dim); font-size:13; display:none;">No qualifying data
+              yet.</div>
+          </div>
+          <div id="results-sprint-wrap" style="margin-top:18px; display:none;">
+            <h4 style="font-weight:700; font-size:14; margin-bottom:8px;">Sprint — Top 5</h4>
+            <div style="overflow-x:auto;">
+              <table class="standings-table">
+                <thead>
+                  <tr>
+                    <th>Pos</th>
+                    <th>Driver</th>
+                    <th>Team</th>
+                    <th>Pts</th>
+                  </tr>
+                </thead>
+                <tbody id="results-sprint-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="results-error" class="error-text" style="margin-top:12px; text-align:center;"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <div class="footer-copyright">F1 Weekend Predictor • Not affiliated with Formula 1</div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
