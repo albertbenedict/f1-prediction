@@ -667,9 +667,9 @@ function getAllPredictions() {
 }
 async function computeScoreForPrediction(pred, race, quali, sprint) {
   const posMap={}; if (race) race.results.forEach(r=> posMap[r.driverId]=r.positionNum);
-  const qualiMap={}; if (quali) quali.results.forEach(q=> qualiMap[q.driverId]=q.position);
+  const gridPoleId = race?.results?.find(r=> r.grid===1)?.driverId ?? null;
   let score=0; const details=[];
-  if (pred.pole && qualiMap[pred.pole]===1) { score+=SCORING.pole; details.push("Pole +5"); } else if(pred.pole) details.push("Pole 0");
+  if (pred.pole && gridPoleId && pred.pole===gridPoleId) { score+=SCORING.pole; details.push("Pole +5"); } else if(pred.pole) details.push("Pole 0");
   if (pred.winner && posMap[pred.winner]===1) { score+=SCORING.win; details.push("Winner +10"); } else details.push("Winner 0");
   [["p2",2],["p3",3]].forEach(([k,pos])=>{
     const id=pred[k];
@@ -840,9 +840,9 @@ async function loadResults(roundOverride) {
       if (raw && race?.results?.length) {
         const pred=JSON.parse(raw);
         const posMap={}; race.results.forEach(r=> posMap[r.driverId]=r.positionNum);
-        const qualiMap={}; if (quali) quali.results.forEach(q=> qualiMap[q.driverId]=q.position);
+        const gridPoleId = race.results.find(r=> r.grid===1)?.driverId ?? null;
         let score=0; const details=[];
-        if (pred.pole && qualiMap[pred.pole]===1) { score+=SCORING.pole; details.push("Pole +5"); } else if(pred.pole) details.push("Pole 0");
+        if (pred.pole && gridPoleId && pred.pole===gridPoleId) { score+=SCORING.pole; details.push("Pole +5"); } else if(pred.pole) details.push("Pole 0");
         if (pred.winner && posMap[pred.winner]===1) { score+=SCORING.win; details.push("Winner +10"); } else details.push("Winner 0");
         [["p2",2],["p3",3]].forEach(([k,pos])=>{
           const id=pred[k];
