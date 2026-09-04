@@ -516,11 +516,24 @@ function loadPredictions(season, round) {
     return JSON.parse(raw);
   } catch { return null; }
 }
-function initPredictionForm(drivers, nextRace) {
+function isWeekendLocked(nextRace, weekendSessions) {
+  try {
+    let fp1Iso = null;
+    if (Array.isArray(weekendSessions) && weekendSessions.length) {
+      fp1Iso = weekendSessions[0]?.startTime;
+    } else if (nextRace?.firstPracticeDate) {
+      fp1Iso = `${nextRace.firstPracticeDate}T${nextRace.firstPracticeTime ?? "00:00:00Z"}`;
+    }
+    if (!fp1Iso) return false;
+    return Date.now() >= new Date(fp1Iso).getTime();
+  } catch { return false; }
+}
+function initPredictionForm(drivers, nextRace, weekendSessions) {
   const season = nextRace?.season ?? new Date().getUTCFullYear();
   const round = nextRace?.round ?? "1";
   const hasSprint = Boolean(nextRace?.hasSprint);
   const wildcardPos = makeWildcardPosition(season, round);
+  const locked = isWeekendLocked(nextRace, weekendSessions);
 
   document.getElementById("form-title").textContent = nextRace ? `Your Predictions for the ${nextRace.raceName}` : "Your Predictions for the Next Grand Prix";
   document.getElementById("wildcard-label").innerHTML = `P-What - Who finishes P${wildcardPos} in the Race? <span class="wildcard-badge" style="margin-left:8px;">Bonus ${SCORING.wildcard}pts</span>`;
@@ -538,6 +551,33 @@ function initPredictionForm(drivers, nextRace) {
   if (hintEl) hintEl.innerHTML = hasSprint ? "Fill Pole, Winner, P2, P3 and Wildcard to save (+ Sprint Pole/Winner)." : "Fill Pole, Winner, P2, P3 and Wildcard to save.";
 
   renderDriverOptions(drivers);
+
+  // lock after FP1 starts
+  const formEl=document.getElementById("prediction-form");
+  const saveBtn=document.getElementById("save-btn");
+  const clearBtn=document.getElementById("clear-btn");
+  let lockMsg=document.getElementById("form-locked-msg");
+  if (!lockMsg) {
+    lockMsg=document.createElement("div");
+    lockMsg.id="form-locked-msg";
+    lockMsg.style.cssText="display:none; margin-top:12px; padding:10px 14px; border-radius:10px; border:2px solid var(--border-color); background:var(--surface-2); color:var(--danger); font-weight:700; font-size:13px; text-align:center;";
+    lockMsg.textContent="🔒 Predictions locked — FP1 has started. Wait for next Grand Prix.";
+    formEl.parentNode.insertBefore(lockMsg, formEl);
+  }
+  if (locked) {
+    lockMsg.style.display="block";
+    formEl.querySelectorAll("select, button").forEach(el=> el.disabled=true);
+    if (saveBtn) saveBtn.disabled=true;
+    // keep saved view readable but disabled
+    document.getElementById("form-loading").style.display="none";
+    formEl.style.display="block";
+    document.getElementById("sprint-section").style.display = hasSprint ? "block" : "none";
+  } else {
+    lockMsg.style.display="none";
+    formEl.querySelectorAll("select").forEach(el=> el.disabled=false);
+    if (saveBtn) saveBtn.disabled=false;
+    if (clearBtn) clearBtn.disabled=false;
+  }
 
   const saved = loadPredictions(season, round);
   if (saved) {
@@ -567,6 +607,11 @@ function initPredictionForm(drivers, nextRace) {
   const form = document.getElementById("prediction-form");
   form.onsubmit = (e)=>{
     e.preventDefault();
+    if (isWeekendLocked(nextRace, weekendSessions)) {
+      showError("Predictions are locked — FP1 has already started.");
+      setTimeout(()=>showError(""),3000);
+      return;
+    }
     const pole = document.getElementById("pole").value;
     const winner = document.getElementById("winner").value;
     const p2 = document.getElementById("p2").value;
@@ -1020,7 +1065,7 @@ async function init() {
 
     // render
     startCountdown(nextRace, weekendSessions);
-    initPredictionForm(drivers, nextRace);
+    initPredictionForm(drivers, nextRace, weekendSessions);
     document.getElementById("standings-title").textContent = `${state.standings.season} Championship • Round ${state.standings.round}`;
     renderStandings(drivers, constructors);
 
